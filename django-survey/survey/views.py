@@ -7,18 +7,11 @@ from survey.forms import *
 from mimetypes import guess_type
 
 ################Helper Methods - Handle repeated sections of code.####################
-'''Return true if the current User is the owner of the specified Survey.'''
-def is_survey_owner(survey_bean):
-    current_user_email = users.get_current_user().email()
-    if current_user_email != survey_bean.owner_email:
-        return False
-    return True
-
 '''Create the request context for the home page.'''
 def create_default_context():
     context = {}
     # List of all surveys that have been created thus far; sorted by creation date
-    context['survey_list'] = Survey.objects.all().order_by('date_created')
+    context['survey_list'] = Survey.objects.all().order_by('date_created').reverse()
     # AppEngine method to get user email
     context['user_email'] = users.get_current_user().email()
     return context
@@ -30,7 +23,6 @@ def create_survey_context(survey_bean):
     return context
 
 ##################Actions - mapped to specific urls in urls.py########################
-
 '''Display home page, which consists of a list of all surveys that have been created
    thus far and a form to create new surveys. '''
 def home(request):
@@ -40,7 +32,7 @@ def home(request):
 def open_survey(request, survey_id):
     survey_bean = get_object_or_404(Survey, pk = survey_id)
     request_context = create_survey_context(survey_bean)
-    if is_survey_owner(survey_bean):
+    if survey_bean.is_survey_owner(users.get_current_user().email()):
         return render(request, 'survey/owner_detail.html', request_context)
     return render(request, 'survey/user_detail.html', request_context)
     
@@ -76,7 +68,7 @@ def delete_survey(request, survey_id):
     survey_bean = get_object_or_404(Survey, pk = survey_id)
     # Make sure that the deletion request came from the Survey owner.
     # If not, display an error message.
-    if not is_survey_owner(survey_bean):
+    if not survey_bean.is_survey_owner(users.get_current_user().email()):
         context = create_default_context()
         context['privileges_error'] = 'This survey can be deleted only by its creator.'
         return render(request, 'survey/home.html', context)
@@ -93,7 +85,7 @@ def edit_title(request, survey_id):
     survey_bean = get_object_or_404(Survey, pk = survey_id)
     # If we did not receive a POST request or the current user is not the
     # Survey's owner, then do not allow the user to change the Survey's title.
-    if request.method != 'POST' or not is_survey_owner(survey_bean):
+    if request.method != 'POST' or not survey_bean.is_survey_owner(users.get_current_user().email()):
         raise Http404
     new_title = request.POST.get('survey_title').strip()
     # Change the title only if the new title is not an empty string.
@@ -105,7 +97,7 @@ def edit_title(request, survey_id):
 '''Create a Question in the Survey with the given survey_id.'''
 def create_question(request, survey_id):
     survey_bean = get_object_or_404(Survey, pk = survey_id)
-    if request.method != 'POST' or not is_survey_owner(survey_bean):
+    if request.method != 'POST' or not survey_bean.is_survey_owner(users.get_current_user().email()):
         raise Http404
     # request.FILES and request.POST are both dicts; QuestionForm will use these
     # arguments to set its fields to user inputs.
