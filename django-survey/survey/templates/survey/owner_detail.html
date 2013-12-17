@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block pageTitle %} {{ survey.survey_title }} {% endblock %}
+{% block navbar %}
+  <li><a href="{% url 'survey:show_results' survey.id %}"> Survey Results </a></li> 
+{% endblock %}
+{% block headingClass %} contenteditable="true" onblur="editTitle(this, {{ survey.id }});" {% endblock %}
+{% block pageHeading %} {{ survey.survey_title }} {% endblock %}
+
+{% block globalMessage %}
+ {% if response_error %}
+  <div class = "span6 offset4">
+   <div class="alert alert-error">
+     <strong> {{ response_error }} </strong>  
+   </div>
+  </div>
+ {% endif %}
+{% endblock %}
+
+{% block displayBlock %}
+ {% load survey_extras %}
+ <div class="row-fluid">
+  {% block displayLayout %}<div class="span6">{% endblock %}
+   <div class="hero-unit">
+    {% if survey.question_set.all %}
+     <form action="{% url 'survey:submit_survey' survey.id %}" method="POST">
+      <ol>
+       {% for question in survey.question_set.all %}
+        <li> {{ question.question_text }} </li>
+        {% if question.image_file %}
+          <img src="{% url 'survey:show_image' survey.id question.id %}" /> <br/>
+        {% endif %}
+        {% for response in question.response_set.all|order_by:"position" %}
+          <input type="radio" name={{question.id}} value={{response.id}} />
+          {{ response.response_text }} <br/>
+        {% endfor %}
+        <br/>
+       {% endfor %}
+       <input type="submit" class="btn btn-success" value="Submit Survey" />
+       <input type="reset" class="btn btn-danger" value="Clear Survey" />
+      </ol>
+     </form>
+    {% endif %}
+   </div>
+  </div>
+{% endblock %}
+
+{% block creationBlock %}
+ <div class="span6"> 
+  <div class="hero-unit">
+   <form action="{% url 'survey:create_question' survey.id %}" method="POST" enctype="multipart/form-data">
+    {% csrf_token %}
+    <label> Enter a question: </label> 
+    <input type="text" name="question_text" maxlength="200" />
+    <div class="errorMessages"> {{ question_form.question_text.errors|striptags }} </div>
+    <input type="file" name="file" /> <br/><br/>
+    <ul id="response_options">
+      <li> <input type="text" name="response_text" maxlength="200"/> </li>
+      <li> <input type="text" name="response_text" maxlength="200"/> </li>
+    </ul>
+    <button class="btn btn-info" onclick="addChoice(); return false;"> Add Response Option </button>
+    <button class="btn btn-info" onclick="removeChoice(); return false;"> Remove Response Option </button>
+    <input type="submit" class="btn btn-primary" value="Create Question"/>
+   </form>
+  </div>  
+ </div>
+</div>
+{% endblock %}

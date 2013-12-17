@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block pageTitle %} Results {% endblock %} 
+{% block navbar %} 
+  <li><a href="{% url 'survey:open_survey' survey.id %}"> Return to Survey </a></li> 
+{% endblock %}
+{% block pageHeading %} Results for {{ survey.survey_title }} {% endblock %}
+
+{% block displayBlock %}
+ {% for question in survey.question_set.all %}
+  <div class="featurette">
+   <h2 class="featurette-heading"> {{ question.question_text }} </h2>
+   <div class="row">
+    <div class="span4 offset3">
+      <table class="table table-condensed table-bordered table-hover">
+       <thead>
+        <tr>
+         <th> Response Option </th>
+         <th> Number of Votes </th>
+        </tr>
+       </thead>
+   
+       <tbody>
+        {% load survey_extras %}
+        {% for response in question.response_set.all|order_by:"position" %}
+         <tr>
+           <td> {{ response.response_text }} </td>
+           <td> {{ response.votes }}  </td>
+         </tr>
+        {% endfor %}
+       </tbody>
+      </table>
+    </div>
+   </div>
+  </div>
+ {% endfor %}
+{% endblock %}

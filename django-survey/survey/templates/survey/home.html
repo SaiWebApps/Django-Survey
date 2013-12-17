@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block pageTitle %} Home {% endblock %}
+{% block pageHeading %} Welcome, {{ user_email }}! {% endblock %}
+
+{% block globalMessage %}
+ {% if privileges_error %}
+  <div class="span6 offset4">
+    <div class="alert alert-info"> {{ privileges_error }} </div>
+  </div>
+ {% endif %}
+{% endblock %}
+
+{% block displayBlock %}
+ <div class="row">
+  <div class="span8 offset4">
+   <table class="table table-condensed table-hover"> 
+    {% if survey_list %}
+     <thead>
+      <tr>
+       <th />
+       <th> Survey Title </th>
+       <th> Survey Creator </th>
+       <th> Date Created </th>
+      </tr>
+     </thead>
+   
+     {% for survey in survey_list %}
+      <tr> 
+       <td>
+        <form action="{% url 'survey:delete_survey' survey.id %} " method="POST"> 
+          {% csrf_token %}
+          <input type="submit" class="btn btn-mini btn-danger" value="&times;" />
+        </form>
+       </td>
+       <td> <a href="{% url 'survey:open_survey' survey.id %}"> {{ survey.survey_title }} </a> </td>
+       <td> {{ survey.owner_email }} </td>
+       <td> {{ survey.date_created }} </td>
+       <td> <a href="{% url 'survey:show_results' survey.id %}"> See Results </a> </td>
+      </tr> 
+     {% endfor %}
+    {% endif %}
+   </table>
+  </div>
+ </div>
+{% endblock %}
+
+<!-- Form to create new surveys. -->
+{% block creationBlock %}
+ <div class="row">
+  <div class="span6 offset4">
+   <form action="{% url 'survey:create_survey' %}" method="POST">
+     {% csrf_token %}      
+     <label> Survey Title: </label> 
+     <div class="input-append">
+       <input type="text" id="appendedInputButton" name="survey_title" 
+              maxlength="200" placeholder="Enter A Survey Title" />
+       <input type="submit" class="btn btn-primary" value="Create Survey" /><br/>
+     </div>
+     <div class="errorMessages"> {{ survey_form.survey_title.errors|striptags}} </div>
+   </form>
+  </div>
+ </div>
+{% endblock %}
