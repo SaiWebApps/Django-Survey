@@ -4,17 +4,21 @@ from survey.models import Survey, Question, Response
 
 class SurveyForm(ModelForm):
     survey_title = forms.CharField(max_length = 200, error_messages = {'required': 'Survey Title Required'})
+
     class Meta:
         model = Survey
         fields = ['survey_title']
 
+
 class QuestionForm(ModelForm):
     question_text = forms.CharField(max_length = 200, error_messages = {'required' : 'Question Required'})
     image_file = forms.ImageField(required = False)
+    
     class Meta:
         model = Question
         fields = ['question_text']
         
+
 class ResponseForm(Form):
     # The user must submit at least 2 valid, complete response options
     # in order for the question and responses to be processed.

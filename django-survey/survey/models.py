@@ -18,6 +18,12 @@ class Survey(models.Model):
             question_bean.delete()
         super(Survey, self).delete()
 
+    def contains_response(self, response_bean):
+        for question_bean in self.question_set.all():
+            if response_bean in question_bean.response_set.all():
+                return True
+        return False
+
     def _unicode_(self):
         return self.survey_title
 

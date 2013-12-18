@@ -69,6 +69,7 @@ def create_survey(request):
     survey_bean.save() #Save the bean in the database.
     return redirect('/survey/' + str(survey_bean.id) + '/')
 
+
 '''Delete the Survey with the given survey_id.'''
 def delete_survey(request, survey_id):
     if request.method != 'POST':
@@ -140,9 +141,13 @@ def create_question(request, survey_id):
 def submit_survey(request, survey_id):
     if request.method != 'POST':
         raise Http404
-   
+    
+    survey_bean = get_object_or_404(Survey, pk = survey_id)
+
     for response_id in request.POST.values():
         response_bean = get_object_or_404(Response, pk = response_id)
+        if not survey_bean.contains_response(response_bean):
+            break
         response_bean.increment_votes()
         response_bean.save()
 
