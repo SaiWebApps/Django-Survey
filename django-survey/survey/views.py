@@ -28,34 +28,42 @@ def create_survey_context(survey_bean):
 def home(request):
     return render(request, 'survey/home.html', create_default_context())
 
+
 '''Open the Survey with the given survey_id.'''
 def open_survey(request, survey_id):
     survey_bean = get_object_or_404(Survey, pk = survey_id)
     request_context = create_survey_context(survey_bean)
+   
     if survey_bean.is_survey_owner(users.get_current_user().email()):
         return render(request, 'survey/owner_detail.html', request_context)
     return render(request, 'survey/user_detail.html', request_context)
+
     
 '''Show the results for the Survey with the given survey_id.'''
 def show_results(request, survey_id):
     survey_bean = get_object_or_404(Survey, pk = survey_id)
     return render(request, 'survey/results.html', create_survey_context(survey_bean))
 
+
 '''Use AppEngine-provided functionality to log the user out.'''
 def logout(request):
     return redirect(users.create_logout_url('/'))
+
 
 '''Create a Survey with the user-specified title.'''
 def create_survey(request):
     if request.method != 'POST':
         raise Http404
+   
     # Populates a SurveyForm with matching values from request.POST, which is a dict
     survey_form = SurveyForm(request.POST)
     user_email = users.get_current_user().email()  # AppEngine method to get user email
+   
     if not survey_form.is_valid():  #If the new Survey's title is blank
         context = create_default_context()  #The usual context for the home page
         context['survey_form'] = survey_form  #To display form errors on the home page
         return render(request, 'survey/home.html', context)
+   
     survey_bean = survey_form.save(commit = False) #Convert the form into a bean.
     survey_bean.owner_email = user_email #Set the bean's owner.
     survey_bean.save() #Save the bean in the database.
@@ -65,30 +73,35 @@ def create_survey(request):
 def delete_survey(request, survey_id):
     if request.method != 'POST':
         raise Http404
+    
     survey_bean = get_object_or_404(Survey, pk = survey_id)
     # Make sure that the deletion request came from the Survey owner. If not, display an error message.
     if not survey_bean.is_survey_owner(users.get_current_user().email()):
         context = create_default_context()
         context['privileges_error'] = 'This survey can be deleted only by its creator.'
         return render(request, 'survey/home.html', context) 
-    survey_bean.delete_questions() # Delete all Q&A in the Survey.
+    
     survey_bean.delete() # Delete the Survey.
     return redirect('/survey/') #Redirect to prevent multiple survey creations via F5.
+
 
 '''Change the title of the Survey with the given survey_id.'''
 def edit_title(request, survey_id):
     survey_bean = get_object_or_404(Survey, pk = survey_id)
+    
     # If we did not receive a POST request or the current user is not the
     # Survey's owner, then do not allow the user to change the Survey's title.
     if request.method != 'POST' or not survey_bean.is_survey_owner(users.get_current_user().email()):
         raise Http404
-    new_title = request.POST.get('survey_title').strip()
-    # Change the title only if the new title is not an empty string.
-    if new_title:
-        survey_bean.survey_title = new_title
+    
+    survey_form = SurveyForm(request.POST)
+    if survey_form.is_valid():
+        survey_bean.survey_title = survey_form.cleaned_data['survey_title']
         survey_bean.save()
+    
     return redirect('/survey/' + survey_id + '/')
     
+
 '''Create a Question in the Survey with the given survey_id.'''
 def create_question(request, survey_id):
     survey_bean = get_object_or_404(Survey, pk = survey_id)
@@ -102,31 +115,39 @@ def create_question(request, survey_id):
     # whole list of responses in the following manner.
     response_list = request.POST.getlist('response_text')
     response_form = ResponseForm()  # Will be used to validate & save Responses
+   
     if not question_form.is_valid():
         context = create_survey_context(survey_bean)
         context['question_form'] = question_form  #To show form errors
         return render(request, 'survey/owner_detail.html', context)
+   
     if not response_form.is_valid_response_list(response_list):  #Insufficient responses
         context = create_survey_context(survey_bean)
         context['response_error'] = 'Please specify at least 2 response options.'
         return render(request, 'survey/detail.html', context)
+   
     question_bean = question_form.save(commit=False)  #Convert the form into a bean.
     question_bean.survey = survey_bean #Set the Foreign Key.
     if request.FILES:
         question_bean.image_file = request.FILES['file']
     question_bean.save()
     response_form.save_response_list(question_bean, response_list)
+    
     return redirect('/survey/' + survey_id + '/')
+
 
 '''Submit responses for the Survey with the given survey_id.'''
 def submit_survey(request, survey_id):
     if request.method != 'POST':
         raise Http404
+   
     for response_id in request.POST.values():
         response_bean = get_object_or_404(Response, pk = response_id)
-        response_bean.votes = response_bean.votes + 1
+        response_bean.increment_votes()
         response_bean.save()
+
     return redirect('/survey/' + survey_id + '/')   
+
 
 '''Show the image with the given question_id in the Survey 
    with the given survey_id.'''

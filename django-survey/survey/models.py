@@ -10,12 +10,13 @@ class Survey(models.Model):
     def is_survey_owner(self, current_user):
         return current_user == self.owner_email
 
-    '''Delete all Q&A in this survey.'''
-    def delete_questions(self):
+    '''Delete this Survey, along with all Q&A associated w/ it.'''
+    def delete(self):
         for question_bean in self.question_set.all():
             for response_bean in question_bean.response_set.all():
                 response_bean.delete()
             question_bean.delete()
+        super(Survey, self).delete()
 
     def _unicode_(self):
         return self.survey_title
@@ -28,6 +29,7 @@ class Question(models.Model):
 
     def _unicode_(self):
         return self.question_text
+        
     class Meta:
         order_with_respect_to = "survey"
 
@@ -38,5 +40,9 @@ class Response(models.Model):
     votes = models.IntegerField(default=0)
     position = models.IntegerField(default = 0)
     
+    '''Increment the number of times that this response was chosen.'''
+    def increment_votes(self):
+        self.votes = self.votes + 1
+        
     def _unicode_(self):
         return self.response_text;

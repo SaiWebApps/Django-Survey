@@ -3,7 +3,7 @@ from django.forms import Form, ModelForm
 from survey.models import Survey, Question, Response
 
 class SurveyForm(ModelForm):
-    survey_title = forms.CharField(max_length = 200, error_messages = {'required': 'Poll Title Required'})
+    survey_title = forms.CharField(max_length = 200, error_messages = {'required': 'Survey Title Required'})
     class Meta:
         model = Survey
         fields = ['survey_title']
