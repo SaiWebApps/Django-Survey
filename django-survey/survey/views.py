@@ -66,17 +66,12 @@ def delete_survey(request, survey_id):
     if request.method != 'POST':
         raise Http404
     survey_bean = get_object_or_404(Survey, pk = survey_id)
-    # Make sure that the deletion request came from the Survey owner.
-    # If not, display an error message.
+    # Make sure that the deletion request came from the Survey owner. If not, display an error message.
     if not survey_bean.is_survey_owner(users.get_current_user().email()):
         context = create_default_context()
         context['privileges_error'] = 'This survey can be deleted only by its creator.'
-        return render(request, 'survey/home.html', context)
-    # If so, delete all of the Q&A in the Survey before deleting the Survey itself.
-    for question_bean in survey_bean.question_set.all():
-        for response_bean in question_bean.response_set.all():
-            response_bean.delete()  # Delete each Response for a given Question.
-        question_bean.delete()  # Delete each Question in the Survey.
+        return render(request, 'survey/home.html', context) 
+    survey_bean.delete_questions() # Delete all Q&A in the Survey.
     survey_bean.delete() # Delete the Survey.
     return redirect('/survey/') #Redirect to prevent multiple survey creations via F5.
 
@@ -107,7 +102,7 @@ def create_question(request, survey_id):
     # whole list of responses in the following manner.
     response_list = request.POST.getlist('response_text')
     response_form = ResponseForm()  # Will be used to validate & save Responses
-    if not question_form.is_valid():  #No Question specified
+    if not question_form.is_valid():
         context = create_survey_context(survey_bean)
         context['question_form'] = question_form  #To show form errors
         return render(request, 'survey/owner_detail.html', context)
