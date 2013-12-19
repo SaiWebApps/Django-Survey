@@ -1,6 +1,30 @@
 from django import forms
 from django.forms import Form, ModelForm
-from survey.models import Survey, Question, Response
+from survey.models import *
+
+class ProfileForm(ModelForm):
+    '''Return whether a UserProfile exists for the given email'''
+    def exists_profile(self, user_email):
+        try:
+            UserProfile.objects.get(email = user_email)
+            return True
+        except UserProfile.DoesNotExist:
+            return False
+        
+    '''If there is no UserProfile for the given email, then create one.'''
+    def create_profile(self, user_email):
+        if self.exists_profile(user_email):
+            return False
+        
+        user_bean = UserProfile()
+        user_bean.email = user_email
+        user_bean.save()
+        return True
+    
+    class Meta:
+        model = UserProfile
+        fields = ['email']
+
 
 class SurveyForm(ModelForm):
     survey_title = forms.CharField(max_length = 200, error_messages = {'required': 'Survey Title Required'})

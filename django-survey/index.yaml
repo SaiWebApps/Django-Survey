@@ -26,52 +26,12 @@ indexes:
 # automatically uploaded to the admin console when you next deploy
 # your application using appcfg.py.
 
-- kind: polls_question
-  properties:
-  - name: poll_id
-  - name: _order
-
-- kind: polls_question
-  properties:
-  - name: poll_id
-  - name: date_created
-
-- kind: polls_response
-  properties:
-  - name: question_id
-  - name: _order
-
 - kind: survey_question
   properties:
   - name: survey_id
   - name: _order
-
-- kind: survey_question
-  properties:
-  - name: survey_id
-  - name: date_created
-
-- kind: survey_question
-  properties:
-  - name: survey_id
-  - name: question_text
-
-- kind: survey_response
-  properties:
-  - name: question_id
-  - name: _order
-
-- kind: survey_response
-  properties:
-  - name: question_id
-  - name: date_created
 
 - kind: survey_response
   properties:
   - name: question_id
   - name: position
-
-- kind: survey_response
-  properties:
-  - name: question_id
-  - name: response_text

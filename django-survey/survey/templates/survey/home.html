@@ -34,7 +34,7 @@
         </form>
        </td>
        <td> <a href="{% url 'survey:open_survey' survey.id %}"> {{ survey.survey_title }} </a> </td>
-       <td> {{ survey.owner_email }} </td>
+       <td> {{ survey.owner.email }} </td>
        <td> {{ survey.date_created }} </td>
        <td> <a href="{% url 'survey:show_results' survey.id %}"> See Results </a> </td>
       </tr> 

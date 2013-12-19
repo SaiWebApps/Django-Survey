@@ -10,10 +10,8 @@ from mimetypes import guess_type
 '''Create the request context for the home page.'''
 def create_default_context():
     context = {}
-    # List of all surveys that have been created thus far; sorted by creation date
-    context['survey_list'] = Survey.objects.all().order_by('date_created').reverse()
-    # AppEngine method to get user email
     context['user_email'] = users.get_current_user().email()
+    context['survey_list'] = Survey.objects.all().order_by('-date_created')
     return context
 
 '''Create the request context for a specific survey's page.'''
@@ -22,10 +20,11 @@ def create_survey_context(survey_bean):
     context['survey'] = survey_bean
     return context
 
+
 ##################Actions - mapped to specific urls in urls.py########################
-'''Display home page, which consists of a list of all surveys that have been created
-   thus far and a form to create new surveys. '''
+'''Display home (user profile) page.'''
 def home(request):
+    ProfileForm().create_profile(users.get_current_user().email())   
     return render(request, 'survey/home.html', create_default_context())
 
 
@@ -52,20 +51,20 @@ def logout(request):
 
 '''Create a Survey with the user-specified title.'''
 def create_survey(request):
-    if request.method != 'POST':
+    user_email = users.get_current_user().email()
+
+    if request.method != 'POST' or not ProfileForm().exists_profile(user_email):
         raise Http404
    
-    # Populates a SurveyForm with matching values from request.POST, which is a dict
     survey_form = SurveyForm(request.POST)
-    user_email = users.get_current_user().email()  # AppEngine method to get user email
-   
-    if not survey_form.is_valid():  #If the new Survey's title is blank
-        context = create_default_context()  #The usual context for the home page
+    if not survey_form.is_valid():
+        context = create_default_context()
         context['survey_form'] = survey_form  #To display form errors on the home page
         return render(request, 'survey/home.html', context)
-   
+ 
+    user_bean = UserProfile.objects.get(email = user_email)
     survey_bean = survey_form.save(commit = False) #Convert the form into a bean.
-    survey_bean.owner_email = user_email #Set the bean's owner.
+    survey_bean.owner = user_bean #Set the bean's owner.
     survey_bean.save() #Save the bean in the database.
     return redirect('/survey/' + str(survey_bean.id) + '/')
 
@@ -98,8 +97,7 @@ def edit_title(request, survey_id):
     survey_form = SurveyForm(request.POST)
     if survey_form.is_valid():
         survey_bean.survey_title = survey_form.cleaned_data['survey_title']
-        survey_bean.save()
-    
+        survey_bean.save() 
     return redirect('/survey/' + survey_id + '/')
     
 
@@ -159,8 +157,10 @@ def submit_survey(request, survey_id):
 def show_image(request, survey_id, question_id):
     question_bean = get_object_or_404(Question, pk = question_id)
     image = question_bean.image_file
+    
     if not image:
         return redirect('/survey/' + survey_id)
+    
     response = HttpResponse(image)
     response['Content-Type'] = guess_type(image.file.name)
     return response

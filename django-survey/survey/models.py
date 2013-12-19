@@ -1,14 +1,24 @@
 from django.db import models
 from datetime import datetime
 
+class UserProfile(models.Model):
+    email = models.EmailField()
+    first_name = models.CharField(max_length = 200)
+    last_name = models.CharField(max_length = 200)
+    employer = models.CharField(max_length = 200)
+    photo = models.ImageField(upload_to = None, blank = True, null = True)
+
+    def _unicode(self):
+        return self.email
+
 class Survey(models.Model):
     survey_title = models.CharField(max_length = 200, blank = False)
     date_created = models.DateTimeField(default = datetime.today())
-    owner_email = models.EmailField()
+    owner = models.ForeignKey(UserProfile)
     
     '''Determines if the current user is the Survey owner'''
     def is_survey_owner(self, current_user):
-        return current_user == self.owner_email
+        return current_user == self.owner.email
 
     '''Delete this Survey, along with all Q&A associated w/ it.'''
     def delete(self):
